@@ -611,7 +611,11 @@ public func race<U: Thenable>(_ thenables: U...) -> Promise<U.T> {
     return race(thenables)
 }
 
+/// - Remark: an empty array returns a promise rejected with `PMKError.badInput`
 public func race<U: Thenable>(_ thenables: [U]) -> Promise<U.T> {
+    guard !thenables.isEmpty else {
+        return Promise(error: PMKError.badInput)
+    }
     let result = Promise<U.T>(.pending)
     for thenable in thenables {
         thenable.pipe{ result.schrödinger = .resolved($0) }
@@ -619,12 +623,9 @@ public func race<U: Thenable>(_ thenables: [U]) -> Promise<U.T> {
     return result
 }
 
+/// - Remark: there is no array version since we would potentially hang forever if empty, use the promise version
 @inline(__always)
 public func race<T>(_ guarantees: Guarantee<T>...) -> Guarantee<T> {
-    return race(guarantees)
-}
-
-public func race<T>(_ guarantees: [Guarantee<T>]) -> Guarantee<T> {
     let (result, seal) = Guarantee<T>.pending()
     for thenable in guarantees {
         thenable.pipe(to: seal)
@@ -652,6 +653,10 @@ public func when<U, V, X, Y, Z>(fulfilled u: Promise<U>, _ v: Promise<V>, _ x: P
 
 /// - Remark: There is no `...` variant, because it is then confusing that you put a splat in and don't get a splat out, when compared with the typical usage for our above splatted kinds
 public func when<U: Thenable>(fulfilled thenables: [U]) -> Promise<[U.T]> {
+    guard !thenables.isEmpty else {
+        return Promise([])
+    }
+
     let rv = Promise<[U.T]>(.pending)
     var values = Array<U.T!>(repeating: nil, count: thenables.count)
     var x = thenables.count
