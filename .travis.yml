@@ -1,5 +1,5 @@
 language: objective-c
-osx_image: xcode8
+osx_image: xcode8.3
 
 env:
   - PLATFORM=Mac
@@ -18,7 +18,7 @@ script:
     Mac)
       xcodebuild -scheme PromiseKit -enableCodeCoverage YES test | xcpretty;;
     iOS|tvOS)
-      open -a "simulator" --args -CurrentDeviceUDID "$UUID"
+      open -a "simulator" --args -CurrentDeviceUDID "$UUID";
       xcodebuild -scheme PromiseKit -destination "id=$UUID" -enableCodeCoverage YES test | xcpretty;;
     watchOS)
       xcodebuild -scheme PromiseKit -destination "name=Apple Watch - 38mm" | xcpretty;;
