@@ -1,3 +1,4 @@
+import class Foundation.Thread
 import Dispatch
 
 /**
@@ -90,6 +91,33 @@ public final class Promise<T>: Thenable, Catchable, Mixin {
 
     public func asVoid() -> Promise<Void> {
         return map(on: nil){ _ in }
+    }
+
+    /**
+     Blocks this thread, so you know, don’t call this on a serial thread that
+     any part of your chain may use. Like the main thread for example.
+     */
+    public func wait() throws -> T {
+
+        if Thread.isMainThread {
+            print("PromiseKit: warning: `wait()` called on main thread!")
+        }
+
+        var result = self.result
+
+        if result == nil {
+            let group = DispatchGroup()
+            group.enter()
+            pipe { result = $0; group.leave() }
+            group.wait()
+        }
+
+        switch result! {
+        case .rejected(let error):
+            throw error
+        case .fulfilled(let value):
+            return value
+        }
     }
 }
 

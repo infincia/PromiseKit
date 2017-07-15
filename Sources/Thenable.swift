@@ -30,7 +30,7 @@ public extension Thenable {
     }
 
     /// -Remark: not `then` due to Swift ambiguity
-    func map<U>(on: ExecutionContext? = NextMainRunloopContext(), execute body: @escaping (T) throws -> U) -> Promise<U> {
+    func map<U>(on: ExecutionContext? = NextMainRunloopContext(), to body: @escaping (T) throws -> U) -> Promise<U> {
         let promise = Promise<U>(.pending)
         pipe { result in
             switch result {
@@ -50,33 +50,6 @@ public extension Thenable {
             }
         }
         return promise
-    }
-
-    /**
-     Blocks this thread, so you know, don’t call this on a serial thread that
-     any part of your chain may use. Like the main thread for example.
-     */
-    public func wait() throws -> T {
-
-        if Thread.isMainThread {
-            print("PromiseKit: warning: `wait()` called on main thread!")
-        }
-
-        var result = self.result
-
-        if result == nil {
-            let group = DispatchGroup()
-            group.enter()
-            pipe { result = $0; group.leave() }
-            group.wait()
-        }
-
-        switch result! {
-        case .rejected(let error):
-            throw error
-        case .fulfilled(let value):
-            return value
-        }
     }
 }
 
@@ -162,7 +135,7 @@ public extension Thenable where T: Sequence {
      - Returns: A new promise, resolved with this promise’s resolution.
      - TODO: allow concurrency
      */
-    func map<U>(on: ExecutionContext? = NextMainRunloopContext(), file: StaticString = #file, line: UInt = #line, transform: @escaping (T.Iterator.Element) throws -> Promise<U>) -> Promise<[U]> {
+    func map<U>(on: ExecutionContext? = NextMainRunloopContext(), transform: @escaping (T.Iterator.Element) throws -> Promise<U>) -> Promise<[U]> {
         return then(on: on) {
             return when(fulfilled: try $0.map(transform))
         }
@@ -173,7 +146,7 @@ public extension Thenable where T: Sequence {
     }
 
     /// `nil` rejects the resulting promise with `PMKError.flatMap`
-    func flatMap<U>(on: ExecutionContext? = NextMainRunloopContext(), _ transform: @escaping (T.Iterator.Element) -> U?) -> Promise<[U]> {
+    func flatMap<U>(on: ExecutionContext? = NextMainRunloopContext(), transform: @escaping (T.Iterator.Element) -> U?) -> Promise<[U]> {
         return map(on: on) { values in
             return try values.map { value in
                 guard let result = transform(value) else {
@@ -184,7 +157,7 @@ public extension Thenable where T: Sequence {
         }
     }
 
-    func flatMap<U>(on: ExecutionContext? = NextMainRunloopContext(), _ transform: @escaping (T.Iterator.Element) -> Promise<[U]>) -> Promise<[U]> {
+    func flatMap<U>(on: ExecutionContext? = NextMainRunloopContext(), transform: @escaping (T.Iterator.Element) -> Promise<[U]>) -> Promise<[U]> {
         return then(on: on) { values in
             return when(fulfilled: values.map(transform)).map(on: nil) {
                 $0.flatMap{ $0 }

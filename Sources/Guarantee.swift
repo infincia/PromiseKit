@@ -1,3 +1,4 @@
+import Foundation
 import Dispatch
 
 /** - Remark: much like a real-life guarantee, it is only as reliable as the source; “promises”
@@ -47,6 +48,35 @@ public final class Guarantee<T>: Thenable, Mixin {
         case .resolved(let value):
             return .fulfilled(value)
         }
+    }
+
+    /**
+     Blocks this thread, so you know, don’t call this on a serial thread that
+     any part of your chain may use. Like the main thread for example.
+     */
+    public func wait() -> T {
+
+        if Thread.isMainThread {
+            print("PromiseKit: warning: `wait()` called on main thread!")
+        }
+
+        var result: T?
+
+        switch schrödinger {
+        case .pending:
+            result = nil
+        case .resolved(let value):
+            result = value
+        }
+
+        if result == nil {
+            let group = DispatchGroup()
+            group.enter()
+            pipe { (t: T) in result = t; group.leave() }
+            group.wait()
+        }
+
+        return result!
     }
 }
 
