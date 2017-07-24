@@ -18,7 +18,7 @@ public func after(interval: TimeInterval) -> Promise<Void> {
 public func after(seconds: TimeInterval) -> Promise<Void> {
     return Promise { fulfill, _ in
         let when = DispatchTime.now() + seconds
-        DispatchQueue.global().asyncAfter(deadline: when, execute: fulfill)
+        DispatchQueue.global(priority: .default).asyncAfter(deadline: when, execute: fulfill)
     }
 }
 
@@ -31,7 +31,7 @@ public func after(interval: DispatchTimeInterval) -> Promise<Void> {
     #if swift(>=4.0)
         DispatchQueue.global().asyncAfter(deadline: when) { fulfill(()) }
     #else
-        DispatchQueue.global().asyncAfter(deadline: when, execute: fulfill)
+        DispatchQueue.global(priority: .default).asyncAfter(deadline: when, execute: fulfill)
     #endif
     }
 }

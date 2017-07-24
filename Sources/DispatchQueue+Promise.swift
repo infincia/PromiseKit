@@ -17,10 +17,10 @@ extension DispatchQueue {
      - SeeAlso: `dispatch_promise()`
      - SeeAlso: `dispatch_promise_on()`
      */
-    public final func promise<T>(group: DispatchGroup? = nil, qos: DispatchQoS = .default, flags: DispatchWorkItemFlags = [], execute body: @escaping () throws -> T) -> Promise<T> {
+    public final func promise<T>(group: DispatchGroup? = nil, priority: GlobalQueuePriority = .default, flags: DispatchWorkItemFlags = [], execute body: @escaping () throws -> T) -> Promise<T> {
 
         return Promise(sealant: { resolve in
-            async(group: group, qos: qos, flags: flags) {
+            async(group: group) {
                 do {
                     resolve(.fulfilled(try body()))
                 } catch {
@@ -32,7 +32,7 @@ extension DispatchQueue {
 
     /// Unavailable due to Swift compiler issues
     @available(*, unavailable)
-    public final func promise<T>(group: DispatchGroup? = nil, qos: DispatchQoS = .default, flags: DispatchWorkItemFlags = [], execute body: () throws -> Promise<T>) -> Promise<T> { fatalError() }
+    public final func promise<T>(group: DispatchGroup? = nil, priority: GlobalQueuePriority = .default, flags: DispatchWorkItemFlags = [], execute body: () throws -> Promise<T>) -> Promise<T> { fatalError() }
 
     /**
      The default queue for all handlers.
