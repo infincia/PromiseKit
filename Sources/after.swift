@@ -18,7 +18,11 @@ public func after(interval: TimeInterval) -> Promise<Void> {
 public func after(seconds: TimeInterval) -> Promise<Void> {
     return Promise { fulfill, _ in
         let when = DispatchTime.now() + seconds
-        DispatchQueue.global(priority: .default).asyncAfter(deadline: when, execute: fulfill)
+        if #available(OSXApplicationExtension 10.10, *) {
+            DispatchQueue.global().asyncAfter(deadline: when) { fulfill(()) }
+        } else {
+            DispatchQueue.global(priority: .default).asyncAfter(deadline: when) { fulfill(()) }
+        }
     }
 }
 
@@ -28,10 +32,10 @@ public func after(seconds: TimeInterval) -> Promise<Void> {
 public func after(interval: DispatchTimeInterval) -> Promise<Void> {
     return Promise { fulfill, _ in
         let when = DispatchTime.now() + interval
-    #if swift(>=4.0)
-        DispatchQueue.global().asyncAfter(deadline: when) { fulfill(()) }
-    #else
-        DispatchQueue.global(priority: .default).asyncAfter(deadline: when, execute: fulfill)
-    #endif
+        if #available(OSXApplicationExtension 10.10, *) {
+            DispatchQueue.global().asyncAfter(deadline: when) { fulfill(()) }
+        } else {
+            DispatchQueue.global(priority: .default).asyncAfter(deadline: when) { fulfill(()) }
+        }
     }
 }
